@@ -1,0 +1,369 @@
+<DOCTYPE html>
+<html>
+<head>
+<style>
+    textarea {
+        width: 100%;
+        height: 100px;
+        resize: none;
+    }
+
+    input {
+        width:90%;
+    }
+    button{
+        width:10%:
+    }
+	div#hidden{
+	display:none;
+	}
+</style>
+</head>
+<body>
+	<div id="hidden">
+    <textarea class="outpane" readonly></textarea><br />
+    <input class="input" type="text" autofocus />
+    <button>-></button>
+    </div>
+	<style>
+	div#cards{
+	padding-top: 12px;
+	}
+	div#card{
+		font-size: 24pt;
+background-color:
+blue;
+width: 100pt;
+text-align: center;
+height: 100pt;
+display: inline-block;
+color:
+white;
+
+font-weight: bold;
+	}
+	div#option{
+	display: inline-block;
+	}
+progress#countdown{
+font-size: 24pt;
+width: 100%;
+height: 10pt;
+text-align: center;
+}
+	</style>
+	<progress id="countdown" max="100" value="0"></progress>
+	
+	<div id="cardnow">
+
+	
+	</div><br>
+	<div id="choose">
+	
+	</div>
+	<div id="cards">
+	
+	</div>
+	<div id="settings">
+	
+	</div>
+	<script>
+	var dcs=document.getElementById("cards");
+	var dcardnow=document.getElementById("cardnow");
+	var dchoose=document.getElementById("choose");
+	var dsett=document.getElementById("settings");
+	var iproc=document.getElementById("countdown");
+	var proc=1;
+	var uintv=1000/30;
+	var tout=null;
+	iproc.value=100;
+	var choosing=false;
+	var playing=false;
+	var auto=true;
+	var cards=null;
+	var cardnow=null;
+	var autostep=null;
+	
+	var anim2=function(){
+		if(iproc.value>0){
+			iproc.value-=100/proc/uintv;
+			tout=setTimeout(anim2,uintv );
+			//console.log(iproc.value);
+		}else{
+			if(auto)
+			autostep();
+		}
+		
+	}
+	function anim(){
+		if(tout!=null)clearTimeout(tout);
+		iproc.value=100;
+		anim2();
+	}
+	function addCard3(color,text,cs){
+		
+		d=document.createElement("div");
+		d.id="card";
+		d.innerHTML=text;
+		d.style.backgroundColor=color;
+		cs.appendChild(d);
+		return d;
+	}
+	var colarr=["red","green","blue","orange"];
+	var specarr=["(/)","<->","+2"];
+	function addCard2(col,i,cs){
+		
+		
+		if(i<9){
+			return addCard3(colarr[col],i+1,cs);
+		}else{
+			if(i<12){
+			
+				return addCard3(colarr[col],specarr[i-9],cs);
+			}else{
+				return addCard3("black","+4",cs);
+			}
+		}
+	}
+	function addCard4(i,cs){
+		return addCard2(Math.floor(i/13),i%13,cs);
+	}
+	function addCard(i){
+		return addCard4(i,dcs)
+	}
+	function clear2(cs){
+		while (cs.hasChildNodes()) {
+			cs.removeChild(cs.lastChild);
+		}
+	}
+	function clear(){
+		clear2(dcs);
+	}
+	function clearAll(){
+		clear2(dcardnow);
+		clear2(dcs);
+		clear2(dchoose);
+		clear2(dsett);
+	}
+	function setCardNow(i){
+		clear2(dcardnow);
+		addCard4(i,dcardnow);
+	}
+	function sendGame(){
+		exampleSocket.send("newgame");
+	}
+	
+	function newgame(){
+	exampleSocket.send("newgame");
+	}
+	function reset(){
+		clearAll();
+		addCard3("GRAY","NEW<br>GAME",dcardnow).onclick=function(evt){newgame();};
+		addCard3("GRAY"," <br>LIST",dcardnow).onclick=function(evt){exampleSocket.send("list");};
+		addCard3("GRAY","JOIN<br>RANDOM",dcardnow).onclick=function(evt){exampleSocket.send("joinrandom");};
+	}
+	//for(let i=0;i<52;i++){	addCard(i);}
+	
+	
+		var token=null;
+		var outpane=document.getElementsByClassName("outpane")[0];
+		function printout(str){
+		outpane.value+=str+"\n";
+		console.log(str);
+		outpane.scrollTop = outpane.scrollHeight;
+		}
+		var exampleSocket = null;
+		
+		function connect(){
+			printout("Connecting...");
+			exampleSocket = new WebSocket("wss://"+location.hostname+":9002",null, 2000, 10);
+			
+			
+			exampleSocket.onerror = function(e){
+				printout("error");
+				console.log(e);
+			}
+			
+			
+			exampleSocket.onclose = function(e){
+				printout("Disconnected");
+				setTimeout(function() { connect(); }, 1000);
+			}
+			
+			
+			exampleSocket.onopen = function (event) {
+				printout("Connected");
+				if(token!=null){
+					exampleSocket.send("reconnect"+token);
+				}else{
+					function getURLParameter(name) {
+					  return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search) || [null, ''])[1].replace(/\+/g, '%20')) || null;
+					}
+					let gid=getURLParameter("gid");
+					if(gid!=null){
+						exampleSocket.send("join"+gid);
+					}
+				}
+				reset();
+				//exampleSocket.send("Here's some text that the server is urgently awaiting!");
+			};
+			function sendCard(t){
+				if(dcs.style.backgroundColor!="gray"){
+					exampleSocket.send("play"+t);
+					console.log(t);
+					if(tout!=null)clearTimeout(tout);
+					dcs.style.backgroundColor="gray";
+				}
+			}
+			autostep=function (){
+		if(choosing){
+			if(cards!=null){
+				let arr=[0,0,0,0];
+				cards.forEach(function(i,t){
+					let nmb=Math.floor(i/13);
+					if((i%13)<12)
+					if(nmb>=0&&nmb<4)
+					arr[nmb]++;
+				});
+				let nmb=0;
+				let maxn=0;
+				for(let i=0;i<4;i++){	
+					if(maxn<arr[i]){
+						maxn=arr[i];
+						nmb=i;
+					}
+				}
+				exampleSocket.send("choose"+nmb);
+				clear2(dchoose);
+			}
+		}
+		if(playing){
+			if(cardnow!=null){
+				let cnmb=Math.floor(cardnow/13);
+				let ccol=cardnow%13;
+				console.log(cardnow);
+				if(cards!=null){
+					console.log(cards);
+					var poss=[];
+					cards.forEach(function(i,t){
+						let nmb=Math.floor(i/13);
+						let col=i%13;
+						if(col==12){
+							if(ccol!=12){
+								poss.push(t);
+							}
+						}
+						if(col==ccol){
+							poss.push(t);
+						}
+						if(cnmb==nmb){
+							poss.push(t);
+						}
+						
+						
+					});
+					console.log(poss)
+					if(poss.length==0){
+						sendCard(cards.length);
+					}else{
+						sendCard(poss[Math.floor(Math.random() * poss.length)]);
+					}
+					playing=false;
+				}
+			}
+		}
+	}
+			dcs.style.backgroundColor="gray";
+			exampleSocket.onmessage = function(e){
+				printout(e.data);
+				let json=JSON.parse(e.data);
+				if(json.msg=="update"){
+					clear();
+					cards=json.cards;
+					let c=addCard3("gray","+1",dcs);
+					c.onclick=function(evt){sendCard(json.cards.length);};
+					json.cards.forEach(function(i,t){
+					let c=addCard(i);
+					c.onclick=function(evt){sendCard(t);};
+					});
+					
+					
+				}
+				if(json.msg=="cardnow"){
+				cardnow=json.cardnow;
+					setCardNow(json.cardnow);
+				}
+				if(json.msg=="choose"){
+					choosing=true;
+					for(let i=0;i<4;i++){	
+						let c=addCard3(colarr[i],"",dchoose);
+						c.onclick=function(evt){
+						exampleSocket.send("choose"+i);
+						clear2(dchoose);
+
+						};
+					
+					}
+					anim();
+				}
+				if(json.msg=="sesslist"){
+					clear();
+					
+					
+					json.list.forEach(function(i,t){
+					let c=addCard3("hsl("+(i%360)+",100%,50%)",i,dcs);
+					
+					
+					c.onclick=function(evt){exampleSocket.send("join"+i);
+					clear();
+					};
+					});
+				}
+				if(json.msg=="chose"){
+					dcardnow.children[0].style.backgroundColor=colarr[json.id];
+					cardnow=13*(json.id)+12;
+					choosing=false;
+				}
+				if(json.msg=="itsyourturn"){
+					dcs.style.backgroundColor="white";
+					playing=true;
+					anim();
+				}
+				if(json.msg=="youjoined"){
+					token=json.token;
+					console.log(token);
+					clearAll();
+					addCard3("GRAY","LEAVE",dsett).onclick=function(evt){exampleSocket.send("leave");};
+					
+				}
+				if(json.msg=="newgame"){
+					clearAll();
+					dcs.innerHTML="https://"+location.hostname+":9002/?gid="+json.gid;
+					addCard3("GRAY","LEAVE",dsett).onclick=function(evt){exampleSocket.send("leave");};
+					
+					addCard3("GRAY"," <br>START",dcardnow).onclick=function(evt){exampleSocket.send("start5");};
+				}
+				if(json.msg=="reset"){
+					reset();
+				}
+				console.log(json);
+			}
+			console.log(exampleSocket);
+			var node = document.getElementsByClassName("input")[0];
+			node.addEventListener("keyup", function(event) {
+				if (event.key === "Enter") {
+					exampleSocket.send("say "+node.value);
+					node.value="";
+				}
+			});
+			
+        }
+		connect();
+		
+		
+		
+		
+       
+    </script>
+</body>
+</html>
