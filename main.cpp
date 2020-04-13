@@ -345,6 +345,7 @@ public:
             }
         }
     }
+
     void onmessageint(websocketpp::connection_hdl hdl, string cmd,int val) {
         
         if (cmd.find("join")==0) {
