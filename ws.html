@@ -1,6 +1,7 @@
 <DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
     textarea {
         width: 100%;
@@ -73,7 +74,7 @@ text-align: center;
 	var dchoose=document.getElementById("choose");
 	var dsett=document.getElementById("settings");
 	var iproc=document.getElementById("countdown");
-	var proc=1;
+	var proc=30;
 	var uintv=1000/30;
 	var tout=null;
 	iproc.value=100;
@@ -176,7 +177,7 @@ text-align: center;
 		
 		function connect(){
 			printout("Connecting...");
-			exampleSocket = new WebSocket("wss://"+location.hostname+":9002",null, 2000, 10);
+			exampleSocket = new WebSocket("wss://"+location.hostname+location.pathname,null, 2000, 10);
 			
 			
 			exampleSocket.onerror = function(e){
@@ -338,7 +339,7 @@ text-align: center;
 				}
 				if(json.msg=="newgame"){
 					clearAll();
-					dcs.innerHTML="https://"+location.hostname+":9002/?gid="+json.gid;
+					dcs.innerHTML="https://"+location.hostname+location.pathname+"/?gid="+json.gid;
 					addCard3("GRAY","LEAVE",dsett).onclick=function(evt){exampleSocket.send("leave");};
 					
 					addCard3("GRAY"," <br>START",dcardnow).onclick=function(evt){exampleSocket.send("start5");};
